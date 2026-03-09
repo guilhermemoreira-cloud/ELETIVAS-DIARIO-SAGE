@@ -1,13 +1,14 @@
 // js/firebase-config.js
-// Configuração do Firebase - Substitua com suas credenciais
+// Configuração do Firebase - Suas credenciais já estão aqui!
 
 const firebaseConfig = {
-  apiKey: "SUA_API_KEY",
-  authDomain: "SEU_PROJETO.firebaseapp.com",
-  projectId: "SEU_PROJETO",
-  storageBucket: "SEU_PROJETO.appspot.com",
-  messagingSenderId: "SEU_SENDER_ID",
-  appId: "SUA_APP_ID",
+  apiKey: "AIzaSyCEekoPPwrg7uFuqfxybGQpTYYDOXs1EBk",
+  authDomain: "sage-eletivas-2026.firebaseapp.com",
+  projectId: "sage-eletivas-2026",
+  storageBucket: "sage-eletivas-2026.firebasestorage.app",
+  messagingSenderId: "585600942611",
+  appId: "1:585600942611:web:7daaf29201dd565a8bb5e6",
+  measurementId: "G-TG8FG01NRY",
 };
 
 let firebaseApp = null;
@@ -23,12 +24,19 @@ function initFirebase() {
       return false;
     }
 
+    // Inicializar o Firebase
     firebaseApp = firebase.initializeApp(firebaseConfig);
     firestore = firebase.firestore();
 
+    // Configurar persistência offline
     firestore
-      .enablePersistence({ synchronizeTabs: true })
-      .then(() => console.log("✅ Persistência offline habilitada"))
+      .enablePersistence({
+        synchronizeTabs: true,
+        experimentalForceOwningTab: true,
+      })
+      .then(() => {
+        console.log("✅ Persistência offline habilitada");
+      })
       .catch((err) => {
         if (err.code === "failed-precondition") {
           console.warn(
@@ -36,11 +44,14 @@ function initFirebase() {
           );
         } else if (err.code === "unimplemented") {
           console.warn("⚠️ Navegador não suporta persistência offline");
+        } else {
+          console.warn("⚠️ Erro na persistência:", err.message);
         }
       });
 
     firebaseInitialized = true;
-    console.log("✅ Firebase inicializado com sucesso");
+    console.log("✅ Firebase inicializado com sucesso!");
+    console.log("📁 Projeto:", firebaseConfig.projectId);
     return true;
   } catch (error) {
     console.error("❌ Erro ao inicializar Firebase:", error);
@@ -54,17 +65,28 @@ async function verificarConexaoFirebase() {
   }
 
   try {
-    const testRef = firebase
-      .firestore()
-      .collection("_health")
-      .doc("connection");
-    await testRef.set({ timestamp: new Date().toISOString() }, { merge: true });
+    // Verificar conectividade com uma operação simples
+    const testRef = firestore.collection("_health").doc("connection");
+    await testRef.set(
+      {
+        timestamp: new Date().toISOString(),
+        online: true,
+      },
+      { merge: true },
+    );
+
+    console.log("📡 Conexão com Firebase OK");
     return true;
   } catch (error) {
-    console.warn("⚠️ Offline:", error.message);
+    console.warn("📡 Offline:", error.message);
     return false;
   }
 }
+
+// Inicializar automaticamente quando o script carregar
+setTimeout(() => {
+  initFirebase();
+}, 100);
 
 window.FirebaseConfig = {
   initFirebase,
@@ -74,5 +96,8 @@ window.FirebaseConfig = {
   },
   get isInitialized() {
     return firebaseInitialized;
+  },
+  get config() {
+    return firebaseConfig;
   },
 };

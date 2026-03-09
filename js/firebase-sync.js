@@ -98,8 +98,8 @@
           novasPendentes.push(op);
         } else {
           console.error(`❌ Operação descartada após 5 tentativas:`, op);
-          if (typeof showToast === "function") {
-            showToast("Falha na sincronização de alguns dados", "error");
+          if (typeof window.showToast === "function") {
+            window.showToast("Falha na sincronização de alguns dados", "error");
           }
         }
       }
@@ -121,6 +121,8 @@
   }
 
   async function salvarDadosFirebase(colecao, dados, id = null) {
+    if (!dados) return false;
+
     const online = await FirebaseConfig.verificarConexaoFirebase();
 
     if (online) {
@@ -198,7 +200,9 @@
       registro.id = Date.now() + Math.floor(Math.random() * 1000);
     }
 
+    if (!window.state) window.state = {};
     if (!window.state.registros) window.state.registros = [];
+
     window.state.registros.push(registro);
 
     if (typeof window.salvarEstado === "function") {
@@ -211,11 +215,11 @@
       registro.id,
     );
 
-    if (typeof showToast === "function") {
+    if (typeof window.showToast === "function") {
       if (resultado) {
-        showToast("Registro salvo e sincronizado!", "success");
+        window.showToast("Registro salvo e sincronizado!", "success");
       } else {
-        showToast("Registro salvo localmente (offline)", "info");
+        window.showToast("Registro salvo localmente (offline)", "info");
       }
     }
 
@@ -268,16 +272,16 @@
   function iniciarMonitoramentoOffline() {
     window.addEventListener("online", () => {
       console.log("📡 Conexão restabelecida! Processando fila...");
-      if (typeof showToast === "function") {
-        showToast("Conexão restabelecida. Sincronizando...", "info");
+      if (typeof window.showToast === "function") {
+        window.showToast("Conexão restabelecida. Sincronizando...", "info");
       }
       processarFilaPendente();
     });
 
     window.addEventListener("offline", () => {
       console.log("📡 Offline - operações serão enfileiradas");
-      if (typeof showToast === "function") {
-        showToast("Modo offline ativado", "warning");
+      if (typeof window.showToast === "function") {
+        window.showToast("Modo offline ativado", "warning");
       }
       atualizarStatusSincronizacao();
     });

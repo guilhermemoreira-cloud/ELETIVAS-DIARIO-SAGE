@@ -3,6 +3,7 @@
 async function carregarDadosDaPlanilha() {
   console.log("📦 Carregando dados...");
 
+  // Tentar Firebase primeiro
   if (
     window.FirebaseSync &&
     typeof window.FirebaseSync.carregarDadosFirebase === "function"
@@ -39,7 +40,9 @@ async function carregarDadosDaPlanilha() {
     processarDadosPlanilha(data.dados);
 
     const agora = new Date().toISOString();
-    state.ultimaSincronizacao = agora;
+    if (window.state) {
+      window.state.ultimaSincronizacao = agora;
+    }
     localStorage.setItem(CONFIG.storageKeys.ultimaSincronizacao, agora);
 
     const spanSinc = document.getElementById("ultimaSincronizacao");
@@ -52,27 +55,40 @@ async function carregarDadosDaPlanilha() {
       "success",
     );
 
+    // Salvar no Firebase em background
     if (
       window.FirebaseSync &&
       typeof window.FirebaseSync.salvarDadosFirebase === "function"
     ) {
       setTimeout(() => {
-        window.FirebaseSync.salvarDadosFirebase("alunos", state.alunos);
-        window.FirebaseSync.salvarDadosFirebase(
-          "professores",
-          state.professores,
-        );
-        window.FirebaseSync.salvarDadosFirebase("eletivas", state.eletivas);
-        window.FirebaseSync.salvarDadosFirebase("matriculas", state.matriculas);
+        if (window.state) {
+          window.FirebaseSync.salvarDadosFirebase(
+            "alunos",
+            window.state.alunos,
+          );
+          window.FirebaseSync.salvarDadosFirebase(
+            "professores",
+            window.state.professores,
+          );
+          window.FirebaseSync.salvarDadosFirebase(
+            "eletivas",
+            window.state.eletivas,
+          );
+          window.FirebaseSync.salvarDadosFirebase(
+            "matriculas",
+            window.state.matriculas,
+          );
+        }
       }, 500);
     }
 
     return true;
   } catch (error) {
     console.error("❌ Erro ao carregar dados:", error);
-    showToast("Erro ao carregar dados. Usando fallback.", "error");
+    showToast("Erro ao carregar dados. Usando dados padrão.", "error");
 
-    carregarDadosFallback();
+    // Usar dados padrão em caso de erro
+    carregarDadosPadrao();
     return false;
   }
 }
@@ -88,7 +104,7 @@ function processarDadosPlanilha(dados) {
       cpf: p.cpf ? p.cpf.toString().replace(/\D/g, "") : "",
       perfil: p.perfil || "PROFESSOR",
     }));
-    state.professores = professores;
+    window.state.professores = professores;
     localStorage.setItem(
       CONFIG.storageKeys.professores,
       JSON.stringify(professores),
@@ -107,14 +123,16 @@ function processarDadosPlanilha(dados) {
         serie: getSerieFromTurma(turma),
       };
     });
-    state.alunos = alunos;
+    window.state.alunos = alunos;
     localStorage.setItem(CONFIG.storageKeys.alunos, JSON.stringify(alunos));
     console.log(`✅ ${alunos.length} alunos processados`);
   }
 
   if (dados.eletivasFixas && dados.eletivasFixas.length > 0) {
     const fixas = dados.eletivasFixas.map((f, index) => {
-      const professor = state.professores.find((p) => p.nome === f.professor);
+      const professor = window.state.professores?.find(
+        (p) => p.nome === f.professor,
+      );
       const tempo = f.tempo || "T1";
       const horario = CONFIG.mapeamentoTempos[tempo] || {
         diaSemana: "?",
@@ -140,46 +158,58 @@ function processarDadosPlanilha(dados) {
       };
     });
 
-    state.eletivas = fixas;
+    window.state.eletivas = fixas;
     localStorage.setItem(CONFIG.storageKeys.eletivas, JSON.stringify(fixas));
     console.log(`✅ ${fixas.length} eletivas fixas processadas`);
   }
 
+  // Inicializar matriculas se não existir
+  if (!window.state.matriculas) {
+    window.state.matriculas = [];
+  }
+
   criarMatriculasBasicas();
 
-  state.nextId = {
-    aluno: state.alunos.length + 1,
-    professor: state.professores.length + 1,
-    eletiva: state.eletivas.length + 1,
-    matricula: (state.matriculas?.length || 0) + 1,
-    registro: 1,
-  };
-  localStorage.setItem("sage_nextId_2026", JSON.stringify(state.nextId));
+  // Atualizar contadores
+  if (!window.state.nextId) {
+    window.state.nextId = {
+      aluno: (window.state.alunos?.length || 0) + 1,
+      professor: (window.state.professores?.length || 0) + 1,
+      eletiva: (window.state.eletivas?.length || 0) + 1,
+      matricula: (window.state.matriculas?.length || 0) + 1,
+      registro: 1,
+    };
+  }
+  localStorage.setItem("sage_nextId_2026", JSON.stringify(window.state.nextId));
 
-  if (typeof salvarEstado === "function") {
-    salvarEstado();
+  if (typeof window.salvarEstado === "function") {
+    window.salvarEstado();
   }
 }
 
 function criarMatriculasBasicas() {
   console.log("📝 Criando matrículas para eletivas fixas...");
 
-  const matriculas = [];
-  let idCounter = 1;
+  if (!window.state.matriculas) {
+    window.state.matriculas = [];
+  }
 
-  state.eletivas.forEach((eletiva) => {
+  let idCounter = window.state.matriculas.length + 1;
+
+  window.state.eletivas?.forEach((eletiva) => {
     if (eletiva.tipo === "FIXA" && eletiva.turmaOrigem) {
-      const alunosTurma = state.alunos.filter(
-        (a) => a.turmaOrigem === eletiva.turmaOrigem,
-      );
+      const alunosTurma =
+        window.state.alunos?.filter(
+          (a) => a.turmaOrigem === eletiva.turmaOrigem,
+        ) || [];
 
       alunosTurma.forEach((aluno) => {
-        const jaMatriculado = matriculas.some(
+        const jaMatriculado = window.state.matriculas.some(
           (m) => m.alunoId === aluno.id && m.eletivaId === eletiva.id,
         );
 
         if (!jaMatriculado) {
-          matriculas.push({
+          window.state.matriculas.push({
             id: idCounter++,
             eletivaId: eletiva.id,
             alunoId: aluno.id,
@@ -192,18 +222,24 @@ function criarMatriculasBasicas() {
     }
   });
 
-  state.matriculas = matriculas;
   localStorage.setItem(
     CONFIG.storageKeys.matriculas,
-    JSON.stringify(matriculas),
+    JSON.stringify(window.state.matriculas),
   );
-  console.log(`✅ ${matriculas.length} matrículas criadas`);
+  console.log(`✅ ${window.state.matriculas.length} matrículas criadas`);
 }
 
-function carregarDadosFallback() {
-  console.log("📦 Carregando dados de fallback...");
+// FUNÇÃO CORRIGIDA - Dados padrão em vez de fallback
+function carregarDadosPadrao() {
+  console.log("📦 Carregando dados padrão...");
 
-  state.professores = [
+  // Garantir que window.state existe
+  if (!window.state) {
+    window.state = {};
+  }
+
+  // Professores padrão
+  window.state.professores = [
     {
       id: 1,
       nome: "Professor Exemplo",
@@ -212,7 +248,8 @@ function carregarDadosFallback() {
     },
   ];
 
-  state.alunos = [
+  // Alunos padrão
+  window.state.alunos = [
     {
       id: 1,
       nome: "Aluno Exemplo",
@@ -220,11 +257,19 @@ function carregarDadosFallback() {
       turmaOrigem: "1ª SÉRIE A",
       serie: "1ª",
     },
+    {
+      id: 2,
+      nome: "Aluno Exemplo 2",
+      codigoSige: "2024002",
+      turmaOrigem: "1ª SÉRIE A",
+      serie: "1ª",
+    },
   ];
 
-  state.eletivas = [
+  // Eletivas padrão
+  window.state.eletivas = [
     {
-      id: 1,
+      id: 1000,
       codigo: "EX001",
       nome: "Eletiva Exemplo",
       tipo: "FIXA",
@@ -238,14 +283,64 @@ function carregarDadosFallback() {
     },
   ];
 
-  state.matriculas = [
-    { id: 1, alunoId: 1, eletivaId: 1, semestreId: "2026-1" },
+  // Matrículas padrão
+  window.state.matriculas = [
+    { id: 1, alunoId: 1, eletivaId: 1000, semestreId: "2026-1" },
+    { id: 2, alunoId: 2, eletivaId: 1000, semestreId: "2026-1" },
   ];
 
-  salvarEstado();
-  console.log("✅ Dados de fallback carregados");
+  // Registros vazio
+  window.state.registros = [];
+
+  // Semestres
+  window.state.semestres = [
+    {
+      id: "2026-1",
+      nome: "1º Semestre 2026",
+      ano: 2026,
+      periodo: 1,
+      ativo: true,
+    },
+    {
+      id: "2026-2",
+      nome: "2º Semestre 2026",
+      ano: 2026,
+      periodo: 2,
+      ativo: false,
+    },
+  ];
+
+  // Salvar no localStorage
+  localStorage.setItem(
+    CONFIG.storageKeys.professores,
+    JSON.stringify(window.state.professores),
+  );
+  localStorage.setItem(
+    CONFIG.storageKeys.alunos,
+    JSON.stringify(window.state.alunos),
+  );
+  localStorage.setItem(
+    CONFIG.storageKeys.eletivas,
+    JSON.stringify(window.state.eletivas),
+  );
+  localStorage.setItem(
+    CONFIG.storageKeys.matriculas,
+    JSON.stringify(window.state.matriculas),
+  );
+  localStorage.setItem(CONFIG.storageKeys.registros, JSON.stringify([]));
+  localStorage.setItem(
+    CONFIG.storageKeys.semestres,
+    JSON.stringify(window.state.semestres),
+  );
+
+  if (typeof window.salvarEstado === "function") {
+    window.salvarEstado();
+  }
+
+  console.log("✅ Dados padrão carregados");
 }
 
+// Recarregar dados
 window.recarregarDados = async function () {
   await carregarDadosDaPlanilha();
   if (typeof window.carregarTodosDados === "function") {
@@ -253,5 +348,6 @@ window.recarregarDados = async function () {
   }
 };
 
+// Exportar funções
 window.carregarDadosDaPlanilha = carregarDadosDaPlanilha;
 window.recarregarDados = recarregarDados;
