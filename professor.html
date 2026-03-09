@@ -65,6 +65,7 @@
             <button class="tab-btn" onclick="mudarTab('historico')">
               <i class="fas fa-history"></i> Histórico
             </button>
+            <!-- A aba Frequências será adicionada via JavaScript -->
           </div>
 
           <!-- TAB DASHBOARD -->
@@ -184,6 +185,8 @@
               <p class="empty-state">Nenhum registro encontrado</p>
             </div>
           </div>
+
+          <!-- TAB FREQUÊNCIAS (será criada pelo JavaScript) -->
         </div>
       </section>
     </div>
@@ -218,11 +221,18 @@
     <!-- TOAST -->
     <div id="toast" class="toast"></div>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
     <!-- Scripts -->
     <script src="js/utils.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/firebase-sync.js"></script>
     <script src="js/storage.js"></script>
     <script src="js/init-data.js"></script>
     <script src="js/sincronizacao.js"></script>
     <script src="js/professor.js"></script>
+    <script src="js/frequencias.js"></script>
   </body>
 </html>

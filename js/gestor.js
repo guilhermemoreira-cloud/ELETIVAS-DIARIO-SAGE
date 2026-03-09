@@ -7,7 +7,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   carregarTheme();
 
-  // Carregar gestor selecionado
   const gestorStorage = localStorage.getItem("gestor_atual");
   if (!gestorStorage) {
     window.location.href = "selecionar-gestor.html";
@@ -17,12 +16,10 @@ document.addEventListener("DOMContentLoaded", function () {
   gestorAtual = JSON.parse(gestorStorage);
   console.log("👤 Gestor:", gestorAtual.nome, "Perfil:", gestorAtual.perfil);
 
-  // Carregar estado
   if (typeof carregarEstado === "function") {
     carregarEstado();
   }
 
-  // Atualizar interface
   document.getElementById("userName").textContent = gestorAtual.nome;
 
   const roleMap = {
@@ -37,29 +34,22 @@ document.addEventListener("DOMContentLoaded", function () {
     atualizarIndicadorSemestre();
   }
 
-  // Carregar todos os dados
   carregarTodosDados();
 });
 
-// ==================== FUNÇÕES DE TABS ====================
+const originalMudarTab = window.mudarTab;
 window.mudarTab = function (tab) {
-  document
-    .querySelectorAll(".gestor-tabs .tab-btn")
-    .forEach((btn) => btn.classList.remove("active"));
-  event.target.classList.add("active");
+  if (originalMudarTab) {
+    originalMudarTab(tab);
+  }
 
-  document
-    .querySelectorAll(".tab-pane")
-    .forEach((pane) => pane.classList.remove("active"));
-  document.getElementById(`tab-${tab}`).classList.add("active");
-
-  if (tab === "eletivas") carregarEletivas();
-  if (tab === "professores") carregarProfessores();
-  if (tab === "alunos") carregarAlunos();
-  if (tab === "dashboard") atualizarDashboard();
+  if (tab === "frequencias-gestor" && window.Frequencias) {
+    setTimeout(() => {
+      window.Frequencias.filtrarFrequenciasGestor();
+    }, 100);
+  }
 };
 
-// ==================== CARREGAR TODOS OS DADOS ====================
 window.carregarTodosDados = function () {
   console.log("📊 Carregando todos os dados...");
 
@@ -70,9 +60,14 @@ window.carregarTodosDados = function () {
   carregarProfessores();
   carregarAlunos();
   carregarInfoSemestres();
+
+  if (window.Frequencias) {
+    setTimeout(() => {
+      window.Frequencias.atualizarSelects();
+    }, 500);
+  }
 };
 
-// ==================== ATUALIZAR CARDS DE RESUMO ====================
 function atualizarCardsResumo() {
   document.getElementById("totalEletivas").textContent = state.eletivas.length;
   document.getElementById("totalProfessores").textContent =
@@ -82,7 +77,6 @@ function atualizarCardsResumo() {
     state.matriculas.length;
 }
 
-// ==================== ATUALIZAR DASHBOARD ====================
 function atualizarDashboard() {
   const eletivasFixas = state.eletivas.filter((e) => e.tipo === "FIXA").length;
   const eletivasMistas = state.eletivas.filter(
@@ -122,7 +116,6 @@ function atualizarDashboard() {
     professoresLimite;
 }
 
-// ==================== ATUALIZAR SELECT DE PROFESSORES ====================
 function atualizarSelectProfessores() {
   const select = document.getElementById("filterEletivasProfessor");
   if (!select) return;
@@ -133,7 +126,6 @@ function atualizarSelectProfessores() {
   });
 }
 
-// ==================== CARREGAR ELETIVAS ====================
 function carregarEletivas() {
   const container = document.getElementById("listaEletivas");
   if (!container) return;
@@ -152,17 +144,14 @@ function carregarEletivas() {
     return;
   }
 
-  // Filtrar por semestre ativo
   let eletivas = state.eletivas.filter((e) => e.semestreId === "2026-1");
   console.log("   - Após filtro de semestre:", eletivas.length);
 
-  // Aplicar filtro de tipo
   if (filtroTipo) {
     eletivas = eletivas.filter((e) => e.tipo === filtroTipo);
     console.log(`   - Após filtro tipo (${filtroTipo}):`, eletivas.length);
   }
 
-  // Aplicar filtro de professor
   if (filtroProfessor) {
     eletivas = eletivas.filter(
       (e) => e.professorId === parseInt(filtroProfessor),
@@ -185,11 +174,9 @@ function carregarEletivas() {
 
   container.innerHTML = "";
   eletivas.forEach((e) => {
-    // Calcular número de matrículas
     const matriculas =
       state.matriculas?.filter((m) => m.eletivaId === e.id).length || 0;
 
-    // Determinar a turma para exibição
     let turmaDisplay = "";
     if (e.turmaOrigem) {
       turmaDisplay = `<span><i class="fas fa-layer-group"></i> ${e.turmaOrigem}</span>`;
@@ -215,14 +202,12 @@ function carregarEletivas() {
   console.log(`✅ ${eletivas.length} eletivas renderizadas`);
 }
 
-// Função para limpar filtros
 window.limparFiltrosEletivas = function () {
   document.getElementById("filterEletivasTipo").value = "";
   document.getElementById("filterEletivasProfessor").value = "";
   carregarEletivas();
 };
 
-// ==================== CARREGAR PROFESSORES ====================
 function carregarProfessores() {
   const container = document.getElementById("listaProfessores");
   const searchTerm =
@@ -266,7 +251,6 @@ function carregarProfessores() {
   });
 }
 
-// ==================== CARREGAR ALUNOS ====================
 function carregarAlunos() {
   const container = document.getElementById("listaAlunos");
   const searchTerm =
@@ -309,7 +293,6 @@ function carregarAlunos() {
   });
 }
 
-// ==================== CARREGAR INFO SEMESTRES ====================
 function carregarInfoSemestres() {
   const eletivasS1 = state.eletivas.filter(
     (e) => e.semestreId === "2026-1",
@@ -330,7 +313,6 @@ function carregarInfoSemestres() {
   document.getElementById("totalMatriculasS2").textContent = matriculasS2;
 }
 
-// ==================== FUNÇÕES DE FILTRO ====================
 window.filtrarEletivas = function () {
   carregarEletivas();
 };
@@ -343,7 +325,6 @@ window.filtrarAlunos = function () {
   carregarAlunos();
 };
 
-// ==================== SINCRONIZAÇÃO MANUAL ====================
 window.sincronizarAgora = async function () {
   if (typeof sincronizarComPlanilha === "function") {
     await sincronizarComPlanilha();
@@ -351,8 +332,16 @@ window.sincronizarAgora = async function () {
   }
 };
 
-// ==================== LOGOUT ====================
 window.fazerLogout = function () {
   localStorage.removeItem("gestor_atual");
   window.location.href = "index.html";
+};
+
+window.carregarFrequenciasGestor = async function () {
+  if (
+    window.Frequencias &&
+    typeof window.Frequencias.filtrarFrequenciasGestor === "function"
+  ) {
+    await window.Frequencias.filtrarFrequenciasGestor();
+  }
 };

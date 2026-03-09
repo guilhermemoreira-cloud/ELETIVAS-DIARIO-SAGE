@@ -1,7 +1,5 @@
 // js/storage.js - GERENCIAMENTO DE ESTADO (sem redirecionamento)
-// Versão 1.0 - Apenas carregar e salvar estado
 
-// ==================== ESTADO GLOBAL ====================
 let state = {
   alunos: [],
   professores: [],
@@ -19,12 +17,9 @@ let state = {
   },
 };
 
-// ==================== CARREGAR DADOS ====================
-
 function carregarEstado() {
   console.log("📊 Carregando estado do localStorage...");
 
-  // Carregar todos os dados do localStorage
   state.professores =
     JSON.parse(localStorage.getItem(CONFIG.storageKeys.professores)) || [];
   state.alunos =
@@ -40,7 +35,6 @@ function carregarEstado() {
   state.remocoes =
     JSON.parse(localStorage.getItem(CONFIG.storageKeys.remocoes)) || [];
 
-  // Carregar contadores
   const nextId = JSON.parse(localStorage.getItem("sage_nextId_2026")) || {
     aluno: state.alunos.length + 1,
     professor: state.professores.length + 1,
@@ -50,7 +44,6 @@ function carregarEstado() {
   };
   state.nextId = nextId;
 
-  // Determinar semestre ativo
   state.semestreAtivo =
     state.semestres.find((s) => s.ativo) || state.semestres[0];
 
@@ -59,12 +52,11 @@ function carregarEstado() {
   console.log(`   - Alunos: ${state.alunos.length}`);
   console.log(`   - Eletivas: ${state.eletivas.length}`);
   console.log(`   - Matrículas: ${state.matriculas.length}`);
+  console.log(`   - Registros: ${state.registros.length}`);
   console.log(`   - Semestre ativo: ${state.semestreAtivo?.id || "Nenhum"}`);
 
   return state;
 }
-
-// ==================== SALVAR DADOS ====================
 
 function salvarEstado() {
   console.log("💾 Salvando estado no localStorage...");
@@ -96,10 +88,22 @@ function salvarEstado() {
   );
   localStorage.setItem("sage_nextId_2026", JSON.stringify(state.nextId));
 
-  console.log("✅ Estado salvo");
-}
+  console.log("✅ Estado salvo no localStorage");
 
-// ==================== FUNÇÕES DE ID ====================
+  if (
+    window.FirebaseSync &&
+    typeof window.FirebaseSync.salvarDadosFirebase === "function"
+  ) {
+    setTimeout(() => {
+      window.FirebaseSync.salvarDadosFirebase("alunos", state.alunos);
+      window.FirebaseSync.salvarDadosFirebase("professores", state.professores);
+      window.FirebaseSync.salvarDadosFirebase("eletivas", state.eletivas);
+      window.FirebaseSync.salvarDadosFirebase("matriculas", state.matriculas);
+      window.FirebaseSync.salvarDadosFirebase("semestres", state.semestres);
+      window.FirebaseSync.salvarDadosFirebase("remocoes", state.remocoes);
+    }, 100);
+  }
+}
 
 function getNextId(tipo) {
   const id = state.nextId[tipo];
@@ -107,8 +111,6 @@ function getNextId(tipo) {
   salvarEstado();
   return id;
 }
-
-// ==================== FUNÇÕES DE UTILIDADE ====================
 
 function atualizarIndicadorSemestre() {
   const badge = document.getElementById("semestreAtivoBadge");
@@ -126,7 +128,6 @@ function getEstatisticas() {
   };
 }
 
-// ==================== EXPORTS ====================
 window.state = state;
 window.carregarEstado = carregarEstado;
 window.salvarEstado = salvarEstado;

@@ -1729,58 +1729,134 @@ body {
 .login-info tr:last-child td {
   border-bottom: none;
 }
-.btn-primary, .btn-secondary {
-    padding: 0.8rem 1.5rem;
-    border: none;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    transition: var(--transition);
-    text-decoration: none;
+.btn-primary,
+.btn-secondary {
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: var(--transition);
+  text-decoration: none;
 }
 
 .btn-primary {
-    background: var(--primary);
-    color: white;
+  background: var(--primary);
+  color: white;
 }
 
 .btn-primary:hover {
-    background: var(--primary-dark);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow);
+  background: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
 }
 
 .btn-secondary {
-    background: var(--bg-gray);
-    color: var(--text-dark);
+  background: var(--bg-gray);
+  color: var(--text-dark);
 }
 
 .btn-secondary:hover {
-    background: var(--text-light);
-    color: white;
+  background: var(--text-light);
+  color: white;
 }
 
 .btn-small {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.9rem;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.9rem;
 }
 
 .logout-btn {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 1.2rem;
-    cursor: pointer;
-    padding: 0.5rem;
-    border-radius: 50%;
-    transition: var(--transition);
-    text-decoration: none;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: var(--transition);
+  text-decoration: none;
 }
 
 .logout-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.2);
+}
+/* ========== FREQUÊNCIAS ========== */
+.frequencias-container {
+  margin-top: 1rem;
+}
+
+.frequencias-filtros {
+  background: var(--bg-white);
+  padding: 1rem;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 1rem;
+}
+
+.sync-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.sync-status.sync-ok {
+  color: var(--success);
+}
+
+.sync-status.sync-pending {
+  color: var(--warning);
+}
+
+.sync-status i {
+  font-size: 1rem;
+}
+
+.frequencias-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--bg-white);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.frequencias-table th {
+  background: var(--primary);
+  color: white;
+  padding: 0.8rem;
+  text-align: left;
+}
+
+.frequencias-table td {
+  padding: 0.8rem;
+  border-bottom: 1px solid var(--bg-light);
+}
+
+.frequencias-table tr:hover {
+  background: var(--bg-light);
+  cursor: pointer;
+}
+
+.stats-card {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: white;
+  border-radius: var(--border-radius);
+  padding: 1rem;
+  text-align: center;
+}
+
+.stats-card h4 {
+  font-size: 2rem;
+  margin: 0;
+}
+
+.stats-card p {
+  margin: 0.5rem 0 0 0;
+  opacity: 0.9;
 }

@@ -68,7 +68,13 @@
     <!-- Toast -->
     <div id="toast" class="toast"></div>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
     <script src="js/utils.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/firebase-sync.js"></script>
     <script src="js/storage.js"></script>
     <script src="js/init-data.js"></script>
     <script src="js/sincronizacao.js"></script>
@@ -78,22 +84,18 @@
       document.addEventListener("DOMContentLoaded", async function () {
         console.log("📋 Página de seleção de professor carregada");
 
-        // Carregar tema
         if (typeof window.carregarTheme === "function") {
           window.carregarTheme();
         }
 
-        // Carregar estado
         if (typeof window.carregarEstado === "function") {
           window.carregarEstado();
         }
 
-        // Carregar dados do arquivo local
         if (typeof window.carregarDadosDaPlanilha === "function") {
           await window.carregarDadosDaPlanilha();
         }
 
-        // Filtrar apenas professores
         professores = (window.state?.professores || []).filter(
           (p) => p.perfil === "PROFESSOR" || p.perfil === "GESTOR_PROFESSOR",
         );
@@ -147,7 +149,6 @@
             btn.style.borderColor = "var(--bg-gray)";
           };
           btn.onclick = () => {
-            // Salvar professor selecionado
             localStorage.setItem(
               "professor_atual",
               JSON.stringify({

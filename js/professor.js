@@ -8,7 +8,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   carregarTheme();
 
-  // Carregar professor selecionado
   const profStorage = localStorage.getItem("professor_atual");
   if (!profStorage) {
     window.location.href = "selecionar-professor.html";
@@ -18,12 +17,10 @@ document.addEventListener("DOMContentLoaded", function () {
   professorAtual = JSON.parse(profStorage);
   console.log("👤 Professor:", professorAtual.nome);
 
-  // Carregar estado
   if (typeof carregarEstado === "function") {
     carregarEstado();
   }
 
-  // Atualizar interface
   document.getElementById("userName").textContent = professorAtual.nome;
   document.getElementById("userRole").textContent = "Professor";
   document.getElementById("professorInfoHeader").innerHTML =
@@ -33,17 +30,14 @@ document.addEventListener("DOMContentLoaded", function () {
     atualizarIndicadorSemestre();
   }
 
-  // Carregar dados
   carregarEletivasProfessor();
   carregarSelectEletivas();
   carregarSelectHistorico();
 
-  // Setar data atual
   const hoje = new Date().toISOString().split("T")[0];
   document.getElementById("dataAula").value = hoje;
 });
 
-// ==================== FUNÇÕES DE TABS ====================
 window.mudarTab = function (tab) {
   document
     .querySelectorAll(".professor-tabs .tab-btn")
@@ -58,13 +52,16 @@ window.mudarTab = function (tab) {
   if (tab === "historico") {
     carregarHistorico();
   }
+  if (tab === "frequencias" && window.Frequencias) {
+    setTimeout(() => {
+      window.Frequencias.filtrarFrequencias();
+    }, 100);
+  }
 };
 
-// ==================== CARREGAR ELETIVAS DO PROFESSOR ====================
 function carregarEletivasProfessor() {
   const container = document.getElementById("professorEletivasCards");
 
-  // Filtrar eletivas do professor
   const eletivas = state.eletivas.filter(
     (e) => e.professorId === professorAtual.id,
   );
@@ -102,8 +99,6 @@ function carregarEletivasProfessor() {
   });
 }
 
-// ==================== FUNÇÕES DE REGISTRO DE AULA ====================
-
 window.prepararRegistroAula = function (eletivaId) {
   document.getElementById("selectEletivaAula").value = eletivaId;
   mudarTab("registrar");
@@ -130,7 +125,6 @@ window.carregarAlunosParaChamada = function () {
     return;
   }
 
-  // Buscar alunos matriculados nesta eletiva
   const matriculas = state.matriculas.filter(
     (m) => m.eletivaId === parseInt(eletivaId),
   );
@@ -214,6 +208,7 @@ window.atualizarResumoChamada = function () {
   document.getElementById("totalAlunosCount").textContent = checkboxes.length;
 };
 
+// FUNÇÃO MODIFICADA PARA USAR FIREBASE OFFLINE-FIRST
 window.salvarRegistroAula = function (event) {
   event.preventDefault();
 
@@ -249,7 +244,7 @@ window.salvarRegistroAula = function (event) {
     });
 
   const registro = {
-    id: registros.length + 1,
+    id: Date.now() + Math.floor(Math.random() * 1000),
     eletivaId: parseInt(eletivaId),
     data: data,
     conteudo: conteudo,
@@ -260,28 +255,49 @@ window.salvarRegistroAula = function (event) {
       justificativas: justificativas,
     },
     professorId: professorAtual.id,
+    professorNome: professorAtual.nome,
     semestreId: state.semestreAtivo.id,
+    createdAt: new Date().toISOString(),
   };
 
-  registros.push(registro);
-  state.registros.push(registro);
+  if (
+    window.FirebaseSync &&
+    typeof window.FirebaseSync.salvarRegistroAulaOffline === "function"
+  ) {
+    window.FirebaseSync.salvarRegistroAulaOffline(registro).then(() => {
+      document.getElementById("registroAulaForm").reset();
+      document.getElementById("chamadaContainer").style.display = "none";
 
-  if (typeof salvarEstado === "function") {
-    salvarEstado();
+      const hoje = new Date().toISOString().split("T")[0];
+      document.getElementById("dataAula").value = hoje;
+
+      mudarTab("dashboard");
+
+      if (
+        document.getElementById("tab-frequencias")?.classList.contains("active")
+      ) {
+        window.Frequencias?.filtrarFrequencias();
+      }
+    });
+  } else {
+    registros.push(registro);
+    state.registros.push(registro);
+
+    if (typeof salvarEstado === "function") {
+      salvarEstado();
+    }
+
+    showToast("Registro de aula salvo com sucesso!", "success");
+
+    document.getElementById("registroAulaForm").reset();
+    document.getElementById("chamadaContainer").style.display = "none";
+
+    const hoje = new Date().toISOString().split("T")[0];
+    document.getElementById("dataAula").value = hoje;
+
+    mudarTab("dashboard");
   }
-
-  showToast("Registro de aula salvo com sucesso!", "success");
-
-  document.getElementById("registroAulaForm").reset();
-  document.getElementById("chamadaContainer").style.display = "none";
-
-  const hoje = new Date().toISOString().split("T")[0];
-  document.getElementById("dataAula").value = hoje;
-
-  mudarTab("dashboard");
 };
-
-// ==================== FUNÇÕES DE HISTÓRICO ====================
 
 function carregarSelectHistorico() {
   const select = document.getElementById("filterEletivaHistorico");
@@ -422,7 +438,6 @@ function abrirDetalhesRegistro(registro, isReadOnly) {
   document.getElementById("modalDetalhes").classList.add("active");
 }
 
-// ==================== LOGOUT ====================
 window.fazerLogout = function () {
   localStorage.removeItem("professor_atual");
   window.location.href = "index.html";
