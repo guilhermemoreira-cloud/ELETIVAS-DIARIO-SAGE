@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SAGE 2026 - Painel do Gestor</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+  </head>
+  <body>
+    <div class="app-container">
+      <!-- Cabeçalho -->
+      <header class="app-header">
+        <div class="header-top">
+          <div class="logo-area">
+            <i class="fas fa-graduation-cap"></i>
+            <div class="school-info">
+              <h1>EEMTI FILGUEIRAS LIMA</h1>
+              <span class="sage-badge">SAGE 2026 - Gestão de Eletivas</span>
+            </div>
+          </div>
+          <div class="semestre-indicator" id="semestreIndicator">
+            <span class="semestre-badge" id="semestreAtivoBadge"
+              >2026.1 - ATIVO</span
+            >
+          </div>
+          <div class="header-actions">
+            <div class="user-info">
+              <i class="fas fa-user-circle"></i>
+              <span id="userName">Gestor</span>
+              <span class="user-role" id="userRole">Gestor</span>
+            </div>
+            <button class="theme-toggle" id="themeToggle">
+              <i class="fas fa-moon"></i>
+            </button>
+            <button class="logout-btn" onclick="fazerLogout()">
+              <i class="fas fa-sign-out-alt"></i>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- MÓDULO GESTOR -->
+      <section class="view active">
+        <div class="gestor-dashboard">
+          <div class="dashboard-header">
+            <h2><i class="fas fa-user-tie"></i> Painel do Gestor - 2026</h2>
+            <div class="header-actions">
+              <button class="btn-refresh" onclick="carregarTodosDados()">
+                <i class="fas fa-sync-alt"></i>
+              </button>
+              <button class="btn-primary" onclick="sincronizarAgora()">
+                <i class="fas fa-cloud-download-alt"></i> Sincronizar
+              </button>
+            </div>
+          </div>
+
+          <!-- Cards de resumo -->
+          <div class="summary-cards">
+            <div class="summary-card" onclick="mudarTab('eletivas')">
+              <i class="fas fa-chart-pie"></i>
+              <div>
+                <h3 id="totalEletivas">0</h3>
+                <p>Eletivas</p>
+              </div>
+            </div>
+            <div class="summary-card" onclick="mudarTab('professores')">
+              <i class="fas fa-chalkboard-teacher"></i>
+              <div>
+                <h3 id="totalProfessores">0</h3>
+                <p>Professores</p>
+              </div>
+            </div>
+            <div class="summary-card" onclick="mudarTab('alunos')">
+              <i class="fas fa-users"></i>
+              <div>
+                <h3 id="totalAlunos">0</h3>
+                <p>Alunos</p>
+              </div>
+            </div>
+            <div class="summary-card" onclick="mudarTab('matriculas')">
+              <i class="fas fa-user-graduate"></i>
+              <div>
+                <h3 id="totalMatriculas">0</h3>
+                <p>Matrículas</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tabs do gestor -->
+          <div class="gestor-tabs">
+            <button class="tab-btn active" onclick="mudarTab('dashboard')">
+              <i class="fas fa-home"></i> Dashboard
+            </button>
+            <button class="tab-btn" onclick="mudarTab('importar')">
+              <i class="fas fa-file-upload"></i> Importar Dados
+            </button>
+            <button class="tab-btn" onclick="mudarTab('eletivas')">
+              <i class="fas fa-book"></i> Eletivas
+            </button>
+            <button class="tab-btn" onclick="mudarTab('professores')">
+              <i class="fas fa-chalkboard-teacher"></i> Professores
+            </button>
+            <button class="tab-btn" onclick="mudarTab('alunos')">
+              <i class="fas fa-users"></i> Alunos
+            </button>
+            <button class="tab-btn" onclick="mudarTab('matriculas')">
+              <i class="fas fa-user-plus"></i> Matrículas
+            </button>
+            <button class="tab-btn" onclick="mudarTab('semestres')">
+              <i class="fas fa-calendar-alt"></i> Semestres
+            </button>
+          </div>
+
+          <!-- Conteúdo das tabs -->
+          <div class="tab-content">
+            <!-- TAB DASHBOARD -->
+            <div class="tab-pane active" id="tab-dashboard">
+              <h3>Visão Geral - <span id="dashboardSemestre">2026.1</span></h3>
+              <div id="dashboardResumo" class="dashboard-resumo">
+                <div class="dashboard-grid">
+                  <div class="info-card">
+                    <h4>Eletivas</h4>
+                    <p>
+                      <strong>FIXAS:</strong>
+                      <span id="dashboardEletivasFixas">0</span>
+                    </p>
+                    <p>
+                      <strong>MISTAS:</strong>
+                      <span id="dashboardEletivasMistas">0</span>
+                    </p>
+                  </div>
+                  <div class="info-card">
+                    <h4>Matrículas</h4>
+                    <p>
+                      <strong>Em Fixas:</strong>
+                      <span id="dashboardMatriculasFixas">0</span>
+                    </p>
+                    <p>
+                      <strong>Em Mistas:</strong>
+                      <span id="dashboardMatriculasMistas">0</span>
+                    </p>
+                  </div>
+                  <div class="info-card">
+                    <h4>Alunos por Série</h4>
+                    <p>
+                      <strong>1ª SÉRIE:</strong>
+                      <span id="dashboardAlunos1">0</span>
+                    </p>
+                    <p>
+                      <strong>2ª SÉRIE:</strong>
+                      <span id="dashboardAlunos2">0</span>
+                    </p>
+                    <p>
+                      <strong>3ª SÉRIE:</strong>
+                      <span id="dashboardAlunos3">0</span>
+                    </p>
+                  </div>
+                  <div class="info-card">
+                    <h4>Alertas</h4>
+                    <p>
+                      <strong>Professores no limite:</strong>
+                      <span id="dashboardProfessoresLimite">0</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- TAB IMPORTAR DADOS -->
+            <div class="tab-pane" id="tab-importar">
+              <h3 style="color: var(--primary); margin-bottom: 2rem">
+                <i class="fas fa-file-upload"></i> Importar Dados - 2026.1
+              </h3>
+
+              <div style="text-align: center; margin: 2rem 0">
+                <button
+                  class="btn-success"
+                  onclick="recarregarDados()"
+                  style="
+                    font-size: 1.2rem;
+                    padding: 1.5rem 4rem;
+                    border-radius: 50px;
+                  "
+                >
+                  <i class="fas fa-sync-alt"></i> RECARREGAR DADOS
+                </button>
+                <p style="margin-top: 1rem; color: var(--text-light)">
+                  <i class="fas fa-info-circle"></i>
+                  Os dados serão carregados automaticamente da planilha Google
+                  Sheets
+                </p>
+                <p
+                  id="ultimaSincronizacao"
+                  style="font-size: 0.9rem; color: var(--text-light)"
+                ></p>
+              </div>
+            </div>
+
+            <!-- TAB ELETIVAS -->
+            <div class="tab-pane" id="tab-eletivas">
+              <h3>Eletivas - <span id="eletivasSemestre">2026.1</span></h3>
+              <div class="eletivas-filters">
+                <select id="filterEletivasTipo" onchange="filtrarEletivas()">
+                  <option value="">Todos os tipos</option>
+                  <option value="FIXA">FIXA</option>
+                  <option value="MISTA">MISTA</option>
+                </select>
+                <select
+                  id="filterEletivasProfessor"
+                  onchange="filtrarEletivas()"
+                >
+                  <option value="">Todos os professores</option>
+                </select>
+              </div>
+              <div class="list-container" id="listaEletivas">
+                <p class="empty-state">Carregando eletivas...</p>
+              </div>
+            </div>
+
+            <!-- TAB PROFESSORES -->
+            <div class="tab-pane" id="tab-professores">
+              <h3>Professores</h3>
+              <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input
+                  type="text"
+                  id="searchProfessores"
+                  placeholder="Buscar professor..."
+                  oninput="filtrarProfessores()"
+                />
+              </div>
+              <div class="list-container" id="listaProfessores">
+                <p class="empty-state">Carregando professores...</p>
+              </div>
+            </div>
+
+            <!-- TAB ALUNOS -->
+            <div class="tab-pane" id="tab-alunos">
+              <h3>Alunos</h3>
+              <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input
+                  type="text"
+                  id="searchAlunos"
+                  placeholder="Buscar aluno..."
+                  oninput="filtrarAlunos()"
+                />
+              </div>
+              <div class="list-container" id="listaAlunos">
+                <p class="empty-state">Carregando alunos...</p>
+              </div>
+            </div>
+
+            <!-- TAB MATRÍCULAS -->
+            <div class="tab-pane" id="tab-matriculas">
+              <h3>Matrículas - <span id="matriculasSemestre">2026.1</span></h3>
+              <div
+                style="
+                  background: var(--bg-light);
+                  padding: 2rem;
+                  border-radius: 8px;
+                  text-align: center;
+                "
+              >
+                <i
+                  class="fas fa-user-plus"
+                  style="font-size: 3rem; color: var(--primary)"
+                ></i>
+                <p style="margin-top: 1rem">
+                  Funcionalidade em desenvolvimento
+                </p>
+              </div>
+            </div>
+
+            <!-- TAB SEMESTRES -->
+            <div class="tab-pane" id="tab-semestres">
+              <h3>Gerenciar Semestres - 2026</h3>
+              <div class="semestres-container">
+                <div class="semestre-card active">
+                  <h4>1º Semestre 2026</h4>
+                  <p>Status: <span class="badge-active">ATIVO</span></p>
+                  <p>Eletivas: <span id="totalEletivasS1">0</span></p>
+                  <p>Matrículas: <span id="totalMatriculasS1">0</span></p>
+                </div>
+                <div class="semestre-card">
+                  <h4>2º Semestre 2026</h4>
+                  <p>Status: <span class="badge-pending">PLANEJADO</span></p>
+                  <p>Eletivas: <span id="totalEletivasS2">0</span></p>
+                  <p>Matrículas: <span id="totalMatriculasS2">0</span></p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- MODAIS -->
+    <div id="modalDetalhes" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="modalTitle">Detalhes</h3>
+          <button class="close-modal" onclick="fecharModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="modalBody"></div>
+        <div class="modal-footer" id="modalFooter"></div>
+      </div>
+    </div>
+
+    <div id="modalConfirmacao" class="modal">
+      <div class="modal-content modal-small">
+        <div class="modal-header">
+          <h3 id="confirmTitle">Confirmação</h3>
+        </div>
+        <div class="modal-body" id="confirmBody"></div>
+        <div class="modal-footer">
+          <button class="btn-secondary" onclick="fecharModalConfirmacao()">
+            Cancelar
+          </button>
+          <button class="btn-primary" id="confirmActionBtn">Confirmar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOAST -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Scripts -->
+    <script>
+      window.recarregarDados = async function () {
+        await window.carregarDadosDaPlanilha();
+        carregarTodosDados();
+      };
+    </script>
+    <script src="js/utils.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/init-data.js"></script>
+    <script src="js/sincronizacao.js"></script>
+    <script src="js/gestor.js"></script>
+  </body>
+</html>

@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SAGE 2026 - Diário do Professor</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+  </head>
+  <body>
+    <div class="app-container">
+      <!-- Cabeçalho -->
+      <header class="app-header">
+        <div class="header-top">
+          <div class="logo-area">
+            <i class="fas fa-graduation-cap"></i>
+            <div class="school-info">
+              <h1>EEMTI FILGUEIRAS LIMA</h1>
+              <span class="sage-badge">SAGE 2026 - Gestão de Eletivas</span>
+            </div>
+          </div>
+          <div class="semestre-indicator" id="semestreIndicator">
+            <span class="semestre-badge" id="semestreAtivoBadge"
+              >2026.1 - ATIVO</span
+            >
+          </div>
+          <div class="header-actions">
+            <div class="user-info">
+              <i class="fas fa-user-circle"></i>
+              <span id="userName">Professor</span>
+              <span class="user-role" id="userRole">Professor</span>
+            </div>
+            <button class="theme-toggle" id="themeToggle">
+              <i class="fas fa-moon"></i>
+            </button>
+            <button class="logout-btn" onclick="fazerLogout()">
+              <i class="fas fa-sign-out-alt"></i>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- MÓDULO PROFESSOR -->
+      <section class="view active">
+        <div class="professor-dashboard">
+          <div class="dashboard-header">
+            <h2>
+              <i class="fas fa-chalkboard-teacher"></i> Diário do Professor -
+              <span id="professorSemestre">2026.1</span>
+            </h2>
+            <div class="professor-info-header" id="professorInfoHeader"></div>
+          </div>
+
+          <!-- Tabs do professor -->
+          <div class="professor-tabs">
+            <button class="tab-btn active" onclick="mudarTab('dashboard')">
+              <i class="fas fa-home"></i> Dashboard
+            </button>
+            <button class="tab-btn" onclick="mudarTab('registrar')">
+              <i class="fas fa-pen"></i> Registrar Aula
+            </button>
+            <button class="tab-btn" onclick="mudarTab('historico')">
+              <i class="fas fa-history"></i> Histórico
+            </button>
+          </div>
+
+          <!-- TAB DASHBOARD -->
+          <div id="tab-dashboard" class="tab-pane active">
+            <h3>Minhas Eletivas - <span id="semestreAtual">2026.1</span></h3>
+            <div class="eletivas-cards" id="professorEletivasCards">
+              <p class="empty-state">Carregando eletivas...</p>
+            </div>
+          </div>
+
+          <!-- TAB REGISTRAR AULA -->
+          <div id="tab-registrar" class="tab-pane">
+            <h3>Registrar Aula</h3>
+
+            <form id="registroAulaForm" onsubmit="salvarRegistroAula(event)">
+              <div class="form-group">
+                <label>Selecione a Eletiva *</label>
+                <select
+                  id="selectEletivaAula"
+                  required
+                  onchange="carregarAlunosParaChamada()"
+                >
+                  <option value="">Escolha</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Data da Aula *</label>
+                <input type="date" id="dataAula" required />
+              </div>
+
+              <div class="form-group">
+                <label>Conteúdo Trabalhado *</label>
+                <textarea
+                  id="conteudoAula"
+                  rows="4"
+                  required
+                  placeholder="Descreva o conteúdo da aula..."
+                ></textarea>
+              </div>
+
+              <div class="form-group">
+                <label>Observações</label>
+                <textarea
+                  id="observacoesAula"
+                  rows="2"
+                  placeholder="Observações adicionais..."
+                ></textarea>
+              </div>
+
+              <div id="chamadaContainer" style="display: none">
+                <div class="chamada-header">
+                  <h4>Registro de Frequência</h4>
+                  <div class="chamada-actions">
+                    <button
+                      type="button"
+                      class="btn-secondary"
+                      onclick="marcarTodosPresentes()"
+                    >
+                      <i class="fas fa-check-square"></i> Todos Presentes
+                    </button>
+                    <button
+                      type="button"
+                      class="btn-secondary"
+                      onclick="marcarTodosAusentes()"
+                    >
+                      <i class="fas fa-square"></i> Todos Ausentes
+                    </button>
+                  </div>
+                </div>
+
+                <div class="chamada-resumo" id="chamadaResumo">
+                  Presentes: <span id="presentesCount">0</span> | Ausentes:
+                  <span id="ausentesCount">0</span> | Total:
+                  <span id="totalAlunosCount">0</span>
+                </div>
+
+                <div class="alunos-chamada" id="listaAlunosChamada"></div>
+              </div>
+
+              <div class="form-actions" style="margin-top: 1rem">
+                <button type="submit" class="btn-primary">
+                  <i class="fas fa-save"></i> Salvar Registro
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- TAB HISTÓRICO -->
+          <div id="tab-historico" class="tab-pane">
+            <h3>Histórico de Aulas</h3>
+
+            <div class="historico-semestre-selector">
+              <button
+                class="btn-toggle active"
+                onclick="mudarHistoricoSemestre('2026-1')"
+                id="hist2026-1"
+              >
+                2026.1
+              </button>
+              <button
+                class="btn-toggle"
+                onclick="mudarHistoricoSemestre('2026-2')"
+                id="hist2026-2"
+              >
+                2026.2
+              </button>
+            </div>
+
+            <div class="historico-filters">
+              <select id="filterEletivaHistorico" onchange="filtrarHistorico()">
+                <option value="">Todas as eletivas</option>
+              </select>
+            </div>
+
+            <div id="historicoAulas" class="historico-container">
+              <p class="empty-state">Nenhum registro encontrado</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- MODAIS -->
+    <div id="modalDetalhes" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="modalTitle">Detalhes</h3>
+          <button class="close-modal" onclick="fecharModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="modalBody"></div>
+        <div class="modal-footer" id="modalFooter"></div>
+      </div>
+    </div>
+
+    <div id="modalConfirmacao" class="modal">
+      <div class="modal-content modal-small">
+        <div class="modal-header">
+          <h3 id="confirmTitle">Confirmação</h3>
+        </div>
+        <div class="modal-body" id="confirmBody"></div>
+        <div class="modal-footer">
+          <button class="btn-secondary" onclick="fecharModalConfirmacao()">
+            Cancelar
+          </button>
+          <button class="btn-primary" id="confirmActionBtn">Confirmar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOAST -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Scripts -->
+    <script src="js/utils.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/init-data.js"></script>
+    <script src="js/sincronizacao.js"></script>
+    <script src="js/professor.js"></script>
+  </body>
+</html>
