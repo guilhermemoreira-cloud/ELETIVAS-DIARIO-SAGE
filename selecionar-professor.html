@@ -9,10 +9,10 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
+    <link rel="manifest" href="manifest.json" />
   </head>
   <body>
     <div class="app-container">
-      <!-- Cabeçalho -->
       <header class="app-header">
         <div class="header-top">
           <div class="logo-area">
@@ -25,7 +25,6 @@
         </div>
       </header>
 
-      <!-- SELEÇÃO DE PROFESSOR -->
       <section class="view active">
         <div class="login-container">
           <div class="login-box" style="max-width: 600px">
@@ -65,13 +64,13 @@
       </section>
     </div>
 
-    <!-- Toast -->
     <div id="toast" class="toast"></div>
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
+    <script src="js/config.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/firebase-config.js"></script>
     <script src="js/firebase-sync.js"></script>
@@ -117,27 +116,27 @@
           const btn = document.createElement("button");
           btn.className = "professor-select-btn";
           btn.style.cssText = `
-                    display: block;
-                    width: 100%;
-                    padding: 1rem;
-                    margin: 0.5rem 0;
-                    background: var(--bg-white);
-                    border: 2px solid var(--bg-gray);
-                    border-radius: 8px;
-                    font-size: 1rem;
-                    text-align: left;
-                    cursor: pointer;
-                    transition: all 0.3s ease;
-                `;
+            display: block;
+            width: 100%;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            background: var(--bg-white);
+            border: 2px solid var(--bg-gray);
+            border-radius: 8px;
+            font-size: 1rem;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.3s ease;
+          `;
           btn.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 1rem;">
-                        <i class="fas fa-user-circle" style="font-size: 2rem; color: var(--primary);"></i>
-                        <div>
-                            <strong style="font-size: 1.1rem;">${prof.nome}</strong>
-                            <div style="font-size: 0.9rem; color: var(--text-light);">${prof.email}</div>
-                        </div>
-                    </div>
-                `;
+            <div style="display: flex; align-items: center; gap: 1rem;">
+              <i class="fas fa-user-circle" style="font-size: 2rem; color: var(--primary);"></i>
+              <div>
+                <strong style="font-size: 1.1rem;">${prof.nome}</strong>
+                <div style="font-size: 0.9rem; color: var(--text-light);">${prof.email}</div>
+              </div>
+            </div>
+          `;
           btn.onmouseover = () => {
             btn.style.background = "var(--primary)";
             btn.style.color = "white";

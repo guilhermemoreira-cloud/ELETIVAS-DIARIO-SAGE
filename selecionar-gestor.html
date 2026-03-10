@@ -9,10 +9,10 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
+    <link rel="manifest" href="manifest.json" />
   </head>
   <body>
     <div class="app-container">
-      <!-- Cabeçalho -->
       <header class="app-header">
         <div class="header-top">
           <div class="logo-area">
@@ -25,7 +25,6 @@
         </div>
       </header>
 
-      <!-- SELEÇÃO DE GESTOR -->
       <section class="view active">
         <div class="login-container">
           <div class="login-box" style="max-width: 600px">
@@ -65,10 +64,16 @@
       </section>
     </div>
 
-    <!-- Toast -->
     <div id="toast" class="toast"></div>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <script src="js/config.js"></script>
     <script src="js/utils.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/firebase-sync.js"></script>
     <script src="js/storage.js"></script>
     <script src="js/init-data.js"></script>
     <script src="js/sincronizacao.js"></script>
@@ -78,22 +83,18 @@
       document.addEventListener("DOMContentLoaded", async function () {
         console.log("📋 Página de seleção de gestor carregada");
 
-        // Carregar tema (agora a função existe no utils.js)
         if (typeof window.carregarTheme === "function") {
           window.carregarTheme();
         }
 
-        // Carregar estado
         if (typeof window.carregarEstado === "function") {
           window.carregarEstado();
         }
 
-        // Carregar dados do arquivo local
         if (typeof window.carregarDadosDaPlanilha === "function") {
           await window.carregarDadosDaPlanilha();
         }
 
-        // Filtrar gestores (GESTOR, SECRETARIA, GESTOR_PROFESSOR)
         gestores = (window.state?.professores || []).filter(
           (p) =>
             p.perfil === "GESTOR" ||
@@ -132,30 +133,30 @@
           const btn = document.createElement("button");
           btn.className = "gestor-select-btn";
           btn.style.cssText = `
-                    display: block;
-                    width: 100%;
-                    padding: 1rem;
-                    margin: 0.5rem 0;
-                    background: var(--bg-white);
-                    border: 2px solid var(--bg-gray);
-                    border-radius: 8px;
-                    font-size: 1rem;
-                    text-align: left;
-                    cursor: pointer;
-                    transition: all 0.3s ease;
-                `;
+            display: block;
+            width: 100%;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            background: var(--bg-white);
+            border: 2px solid var(--bg-gray);
+            border-radius: 8px;
+            font-size: 1rem;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.3s ease;
+          `;
           btn.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 1rem;">
-                        <i class="fas ${perfilIcon}" style="font-size: 2rem; color: var(--primary);"></i>
-                        <div style="flex: 1;">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <strong style="font-size: 1.1rem;">${gestor.nome}</strong>
-                                <span style="background: var(--primary); color: white; padding: 0.2rem 1rem; border-radius: 20px; font-size: 0.8rem;">${perfilNome}</span>
-                            </div>
-                            <div style="font-size: 0.9rem; color: var(--text-light);">${gestor.email}</div>
-                        </div>
-                    </div>
-                `;
+            <div style="display: flex; align-items: center; gap: 1rem;">
+              <i class="fas ${perfilIcon}" style="font-size: 2rem; color: var(--primary);"></i>
+              <div style="flex: 1;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <strong style="font-size: 1.1rem;">${gestor.nome}</strong>
+                  <span style="background: var(--primary); color: white; padding: 0.2rem 1rem; border-radius: 20px; font-size: 0.8rem;">${perfilNome}</span>
+                </div>
+                <div style="font-size: 0.9rem; color: var(--text-light);">${gestor.email}</div>
+              </div>
+            </div>
+          `;
           btn.onmouseover = () => {
             btn.style.background = "var(--primary)";
             btn.style.color = "white";
@@ -167,7 +168,6 @@
             btn.style.borderColor = "var(--bg-gray)";
           };
           btn.onclick = () => {
-            // Salvar gestor selecionado
             localStorage.setItem(
               "gestor_atual",
               JSON.stringify({

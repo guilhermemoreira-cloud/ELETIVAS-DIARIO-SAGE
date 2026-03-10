@@ -9,10 +9,10 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
+    <link rel="manifest" href="manifest.json" />
   </head>
   <body>
     <div class="app-container">
-      <!-- Cabeçalho -->
       <header class="app-header">
         <div class="header-top">
           <div class="logo-area">
@@ -25,7 +25,6 @@
         </div>
       </header>
 
-      <!-- TELA DE SELEÇÃO DE PERFIL -->
       <section id="perfil-view" class="view active">
         <div class="login-container">
           <div class="login-box">
@@ -97,18 +96,16 @@
       </section>
     </div>
 
-    <!-- Toast -->
     <div id="toast" class="toast"></div>
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
+    <script src="js/config.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/firebase-config.js"></script>
-    <script src="js/firebase-sync.js"></script>
     <script>
-      // Carregar tema salvo
       if (typeof window.carregarTheme === "function") {
         window.carregarTheme();
       }

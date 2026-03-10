@@ -1,22 +1,26 @@
 // js/firebase-config.js
-// Configuração do Firebase - Suas credenciais já estão aqui!
+console.log("🔥 Inicializando Firebase...");
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCEekoPPwrg7uFuqfxybGQpTYYDOXs1EBk",
-  authDomain: "sage-eletivas-2026.firebaseapp.com",
-  projectId: "sage-eletivas-2026",
-  storageBucket: "sage-eletivas-2026.firebasestorage.app",
-  messagingSenderId: "585600942611",
-  appId: "1:585600942611:web:7daaf29201dd565a8bb5e6",
-  measurementId: "G-TG8FG01NRY",
+  apiKey: "AIzaSyDF_GVhXrBhqtsj7oodEZ84zhV9xkr3daY",
+  authDomain: "diario-sage.firebaseapp.com",
+  projectId: "diario-sage",
+  storageBucket: "diario-sage.firebasestorage.app",
+  messagingSenderId: "87729638767",
+  appId: "1:87729638767:web:2b90ce5e1bd3d59ed42c9a",
+  measurementId: "G-EX5L4S48QB",
 };
 
 let firebaseApp = null;
-let firestore = null;
+let db = null;
 let firebaseInitialized = false;
 
 function initFirebase() {
-  if (firebaseInitialized) return true;
+  // Se já inicializado, retorna true
+  if (firebaseInitialized) {
+    console.log("✅ Firebase já estava inicializado");
+    return true;
+  }
 
   try {
     if (typeof firebase === "undefined") {
@@ -24,23 +28,32 @@ function initFirebase() {
       return false;
     }
 
-    // Inicializar o Firebase
-    firebaseApp = firebase.initializeApp(firebaseConfig);
-    firestore = firebase.firestore();
+    // Verificar se já existe uma instância com o nome 'DEFAULT'
+    try {
+      // Tenta obter a instância existente
+      firebaseApp = firebase.app();
+      console.log("✅ Usando instância Firebase existente");
+    } catch (e) {
+      // Se não existir, cria uma nova
+      console.log("🆕 Criando nova instância Firebase");
+      firebaseApp = firebase.initializeApp(firebaseConfig);
+    }
 
-    // Configurar persistência offline
-    firestore
-      .enablePersistence({
-        synchronizeTabs: true,
-        experimentalForceOwningTab: true,
-      })
+    // Obter o Firestore
+    db = firebase.firestore();
+
+    // CORREÇÃO: Não usar synchronizeTabs e experimentalForceOwningTab juntos
+    // Opção 1: Usar apenas synchronizeTabs (recomendado)
+    db.enablePersistence({
+      synchronizeTabs: true,
+    })
       .then(() => {
-        console.log("✅ Persistência offline habilitada");
+        console.log("✅ Persistência offline habilitada (multi-tab)");
       })
       .catch((err) => {
         if (err.code === "failed-precondition") {
           console.warn(
-            "⚠️ Múltiplas abas abertas, persistência apenas em uma aba",
+            "⚠️ Múltiplas abas abertas - persistência apenas em uma aba",
           );
         } else if (err.code === "unimplemented") {
           console.warn("⚠️ Navegador não suporta persistência offline");
@@ -51,7 +64,6 @@ function initFirebase() {
 
     firebaseInitialized = true;
     console.log("✅ Firebase inicializado com sucesso!");
-    console.log("📁 Projeto:", firebaseConfig.projectId);
     return true;
   } catch (error) {
     console.error("❌ Erro ao inicializar Firebase:", error);
@@ -60,13 +72,17 @@ function initFirebase() {
 }
 
 async function verificarConexaoFirebase() {
-  if (!firebaseInitialized && !initFirebase()) {
-    return false;
+  // Garantir que Firebase está inicializado
+  if (!firebaseInitialized) {
+    const initResult = initFirebase();
+    if (!initResult) {
+      return false;
+    }
   }
 
   try {
     // Verificar conectividade com uma operação simples
-    const testRef = firestore.collection("_health").doc("connection");
+    const testRef = db.collection("_health").doc("connection");
     await testRef.set(
       {
         timestamp: new Date().toISOString(),
@@ -83,16 +99,18 @@ async function verificarConexaoFirebase() {
   }
 }
 
-// Inicializar automaticamente quando o script carregar
-setTimeout(() => {
-  initFirebase();
-}, 100);
+// Não inicializar automaticamente - deixar para quando necessário
+// initFirebase();
 
 window.FirebaseConfig = {
   initFirebase,
   verificarConexaoFirebase,
   get firestore() {
-    return firestore;
+    // Garantir que db está disponível
+    if (!db && !initFirebase()) {
+      return null;
+    }
+    return db;
   },
   get isInitialized() {
     return firebaseInitialized;

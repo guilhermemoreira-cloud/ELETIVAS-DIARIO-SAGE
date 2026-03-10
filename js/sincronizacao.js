@@ -1,32 +1,17 @@
 // js/sincronizacao.js - Carregando dados do arquivo JSON local
+console.log("🔄 sincronizacao.js carregado");
 
 async function carregarDadosDaPlanilha() {
-  console.log("📦 Carregando dados...");
-
-  // Tentar Firebase primeiro
-  if (
-    window.FirebaseSync &&
-    typeof window.FirebaseSync.carregarDadosFirebase === "function"
-  ) {
-    try {
-      const registros =
-        await window.FirebaseSync.carregarDadosFirebase("registros");
-      if (registros && registros.length > 0) {
-        console.log("✅ Dados carregados do Firebase");
-        showToast("Dados carregados do Firebase", "success");
-        return true;
-      }
-    } catch (error) {
-      console.warn("⚠️ Erro ao carregar Firebase, usando fallback:", error);
-    }
-  }
-
   console.log("📦 Carregando dados do arquivo local...");
 
   try {
     showToast("Carregando dados...", "info");
 
-    const response = await fetch("js/dados-planilha.json");
+    if (typeof CONFIG === "undefined") {
+      throw new Error("CONFIG não definido. Verifique a ordem dos scripts.");
+    }
+
+    const response = await fetch("data/dados-planilha.json");
 
     if (!response.ok) {
       throw new Error(`Erro ao carregar arquivo: ${response.status}`);
@@ -40,9 +25,7 @@ async function carregarDadosDaPlanilha() {
     processarDadosPlanilha(data.dados);
 
     const agora = new Date().toISOString();
-    if (window.state) {
-      window.state.ultimaSincronizacao = agora;
-    }
+    state.ultimaSincronizacao = agora;
     localStorage.setItem(CONFIG.storageKeys.ultimaSincronizacao, agora);
 
     const spanSinc = document.getElementById("ultimaSincronizacao");
@@ -55,46 +38,22 @@ async function carregarDadosDaPlanilha() {
       "success",
     );
 
-    // Salvar no Firebase em background
-    if (
-      window.FirebaseSync &&
-      typeof window.FirebaseSync.salvarDadosFirebase === "function"
-    ) {
-      setTimeout(() => {
-        if (window.state) {
-          window.FirebaseSync.salvarDadosFirebase(
-            "alunos",
-            window.state.alunos,
-          );
-          window.FirebaseSync.salvarDadosFirebase(
-            "professores",
-            window.state.professores,
-          );
-          window.FirebaseSync.salvarDadosFirebase(
-            "eletivas",
-            window.state.eletivas,
-          );
-          window.FirebaseSync.salvarDadosFirebase(
-            "matriculas",
-            window.state.matriculas,
-          );
-        }
-      }, 500);
-    }
-
     return true;
   } catch (error) {
     console.error("❌ Erro ao carregar dados:", error);
-    showToast("Erro ao carregar dados. Usando dados padrão.", "error");
-
-    // Usar dados padrão em caso de erro
-    carregarDadosPadrao();
+    showToast("Erro ao carregar dados. Usando fallback.", "error");
+    carregarDadosFallback();
     return false;
   }
 }
 
 function processarDadosPlanilha(dados) {
   console.log("🔄 Processando dados da planilha...");
+
+  if (typeof CONFIG === "undefined") {
+    console.error("❌ CONFIG não definido. Não foi possível processar dados.");
+    return;
+  }
 
   if (dados.professores && dados.professores.length > 0) {
     const professores = dados.professores.map((p, index) => ({
@@ -104,7 +63,7 @@ function processarDadosPlanilha(dados) {
       cpf: p.cpf ? p.cpf.toString().replace(/\D/g, "") : "",
       perfil: p.perfil || "PROFESSOR",
     }));
-    window.state.professores = professores;
+    state.professores = professores;
     localStorage.setItem(
       CONFIG.storageKeys.professores,
       JSON.stringify(professores),
@@ -123,21 +82,21 @@ function processarDadosPlanilha(dados) {
         serie: getSerieFromTurma(turma),
       };
     });
-    window.state.alunos = alunos;
+    state.alunos = alunos;
     localStorage.setItem(CONFIG.storageKeys.alunos, JSON.stringify(alunos));
     console.log(`✅ ${alunos.length} alunos processados`);
   }
 
   if (dados.eletivasFixas && dados.eletivasFixas.length > 0) {
     const fixas = dados.eletivasFixas.map((f, index) => {
-      const professor = window.state.professores?.find(
-        (p) => p.nome === f.professor,
-      );
+      const professor = state.professores.find((p) => p.nome === f.professor);
       const tempo = f.tempo || "T1";
       const horario = CONFIG.mapeamentoTempos[tempo] || {
         diaSemana: "?",
         seriesPermitidas: ["1ª", "2ª", "3ª"],
       };
+
+      const turmaNormalizada = normalizarTurma(f.turma || "");
 
       return {
         id: index + 1000,
@@ -150,37 +109,35 @@ function processarDadosPlanilha(dados) {
           diaSemana: horario.diaSemana || "?",
           codigoTempo: tempo,
         },
-        local: f.local || "A DEFINIR",
+        local: turmaNormalizada || f.local || "A DEFINIR",
         vagas: 40,
         seriesPermitidas: horario.seriesPermitidas || ["1ª", "2ª", "3ª"],
-        turmaOrigem: normalizarTurma(f.turma || ""),
+        turmaOrigem: turmaNormalizada,
         semestreId: "2026-1",
       };
     });
 
-    window.state.eletivas = fixas;
+    state.eletivas = fixas;
     localStorage.setItem(CONFIG.storageKeys.eletivas, JSON.stringify(fixas));
     console.log(`✅ ${fixas.length} eletivas fixas processadas`);
   }
 
-  // Inicializar matriculas se não existir
-  if (!window.state.matriculas) {
-    window.state.matriculas = [];
+  if (!state.matriculas) {
+    state.matriculas = [];
   }
 
   criarMatriculasBasicas();
 
-  // Atualizar contadores
-  if (!window.state.nextId) {
-    window.state.nextId = {
-      aluno: (window.state.alunos?.length || 0) + 1,
-      professor: (window.state.professores?.length || 0) + 1,
-      eletiva: (window.state.eletivas?.length || 0) + 1,
-      matricula: (window.state.matriculas?.length || 0) + 1,
+  if (!state.nextId) {
+    state.nextId = {
+      aluno: (state.alunos?.length || 0) + 1,
+      professor: (state.professores?.length || 0) + 1,
+      eletiva: (state.eletivas?.length || 0) + 1,
+      matricula: (state.matriculas?.length || 0) + 1,
       registro: 1,
     };
   }
-  localStorage.setItem("sage_nextId_2026", JSON.stringify(window.state.nextId));
+  localStorage.setItem("sage_nextId_2026", JSON.stringify(state.nextId));
 
   if (typeof window.salvarEstado === "function") {
     window.salvarEstado();
@@ -190,26 +147,25 @@ function processarDadosPlanilha(dados) {
 function criarMatriculasBasicas() {
   console.log("📝 Criando matrículas para eletivas fixas...");
 
-  if (!window.state.matriculas) {
-    window.state.matriculas = [];
+  if (!state.matriculas) {
+    state.matriculas = [];
   }
 
-  let idCounter = window.state.matriculas.length + 1;
+  let idCounter = state.matriculas.length + 1;
 
-  window.state.eletivas?.forEach((eletiva) => {
+  state.eletivas?.forEach((eletiva) => {
     if (eletiva.tipo === "FIXA" && eletiva.turmaOrigem) {
       const alunosTurma =
-        window.state.alunos?.filter(
-          (a) => a.turmaOrigem === eletiva.turmaOrigem,
-        ) || [];
+        state.alunos?.filter((a) => a.turmaOrigem === eletiva.turmaOrigem) ||
+        [];
 
       alunosTurma.forEach((aluno) => {
-        const jaMatriculado = window.state.matriculas.some(
+        const jaMatriculado = state.matriculas.some(
           (m) => m.alunoId === aluno.id && m.eletivaId === eletiva.id,
         );
 
         if (!jaMatriculado) {
-          window.state.matriculas.push({
+          state.matriculas.push({
             id: idCounter++,
             eletivaId: eletiva.id,
             alunoId: aluno.id,
@@ -224,123 +180,121 @@ function criarMatriculasBasicas() {
 
   localStorage.setItem(
     CONFIG.storageKeys.matriculas,
-    JSON.stringify(window.state.matriculas),
+    JSON.stringify(state.matriculas),
   );
-  console.log(`✅ ${window.state.matriculas.length} matrículas criadas`);
+  console.log(`✅ ${state.matriculas.length} matrículas criadas`);
 }
 
-// FUNÇÃO CORRIGIDA - Dados padrão em vez de fallback
-function carregarDadosPadrao() {
-  console.log("📦 Carregando dados padrão...");
+function carregarDadosFallback() {
+  console.log("📦 Carregando dados de fallback...");
 
-  // Garantir que window.state existe
-  if (!window.state) {
-    window.state = {};
+  if (!state.professores || state.professores.length === 0) {
+    state.professores = [
+      {
+        id: 1,
+        nome: "Professor Exemplo",
+        email: "professor@exemplo.com",
+        perfil: "PROFESSOR",
+      },
+    ];
   }
 
-  // Professores padrão
-  window.state.professores = [
-    {
-      id: 1,
-      nome: "Professor Exemplo",
-      email: "professor@exemplo.com",
-      perfil: "PROFESSOR",
-    },
-  ];
+  if (!state.alunos || state.alunos.length === 0) {
+    state.alunos = [
+      {
+        id: 1,
+        nome: "Aluno Exemplo",
+        codigoSige: "2024001",
+        turmaOrigem: "1ª SÉRIE A",
+        serie: "1ª",
+      },
+      {
+        id: 2,
+        nome: "Aluno Exemplo 2",
+        codigoSige: "2024002",
+        turmaOrigem: "1ª SÉRIE A",
+        serie: "1ª",
+      },
+    ];
+  }
 
-  // Alunos padrão
-  window.state.alunos = [
-    {
-      id: 1,
-      nome: "Aluno Exemplo",
-      codigoSige: "2024001",
-      turmaOrigem: "1ª SÉRIE A",
-      serie: "1ª",
-    },
-    {
-      id: 2,
-      nome: "Aluno Exemplo 2",
-      codigoSige: "2024002",
-      turmaOrigem: "1ª SÉRIE A",
-      serie: "1ª",
-    },
-  ];
+  if (!state.eletivas || state.eletivas.length === 0) {
+    state.eletivas = [
+      {
+        id: 1000,
+        codigo: "EX001",
+        nome: "Eletiva Exemplo",
+        tipo: "FIXA",
+        professorId: 1,
+        professorNome: "Professor Exemplo",
+        horario: { diaSemana: "Segunda", codigoTempo: "T1" },
+        vagas: 40,
+        seriesPermitidas: ["1ª", "2ª", "3ª"],
+        turmaOrigem: "1ª SÉRIE A",
+        semestreId: "2026-1",
+      },
+    ];
+  }
 
-  // Eletivas padrão
-  window.state.eletivas = [
-    {
-      id: 1000,
-      codigo: "EX001",
-      nome: "Eletiva Exemplo",
-      tipo: "FIXA",
-      professorId: 1,
-      professorNome: "Professor Exemplo",
-      horario: { diaSemana: "Segunda", codigoTempo: "T1" },
-      vagas: 40,
-      seriesPermitidas: ["1ª", "2ª", "3ª"],
-      turmaOrigem: "1ª SÉRIE A",
-      semestreId: "2026-1",
-    },
-  ];
+  if (!state.matriculas || state.matriculas.length === 0) {
+    state.matriculas = [
+      { id: 1, alunoId: 1, eletivaId: 1000, semestreId: "2026-1" },
+      { id: 2, alunoId: 2, eletivaId: 1000, semestreId: "2026-1" },
+    ];
+  }
 
-  // Matrículas padrão
-  window.state.matriculas = [
-    { id: 1, alunoId: 1, eletivaId: 1000, semestreId: "2026-1" },
-    { id: 2, alunoId: 2, eletivaId: 1000, semestreId: "2026-1" },
-  ];
+  if (!state.registros) {
+    state.registros = [];
+  }
 
-  // Registros vazio
-  window.state.registros = [];
+  if (!state.semestres || state.semestres.length === 0) {
+    state.semestres = [
+      {
+        id: "2026-1",
+        nome: "1º Semestre 2026",
+        ano: 2026,
+        periodo: 1,
+        ativo: true,
+      },
+      {
+        id: "2026-2",
+        nome: "2º Semestre 2026",
+        ano: 2026,
+        periodo: 2,
+        ativo: false,
+      },
+    ];
+  }
 
-  // Semestres
-  window.state.semestres = [
-    {
-      id: "2026-1",
-      nome: "1º Semestre 2026",
-      ano: 2026,
-      periodo: 1,
-      ativo: true,
-    },
-    {
-      id: "2026-2",
-      nome: "2º Semestre 2026",
-      ano: 2026,
-      periodo: 2,
-      ativo: false,
-    },
-  ];
-
-  // Salvar no localStorage
   localStorage.setItem(
     CONFIG.storageKeys.professores,
-    JSON.stringify(window.state.professores),
+    JSON.stringify(state.professores),
   );
-  localStorage.setItem(
-    CONFIG.storageKeys.alunos,
-    JSON.stringify(window.state.alunos),
-  );
+  localStorage.setItem(CONFIG.storageKeys.alunos, JSON.stringify(state.alunos));
   localStorage.setItem(
     CONFIG.storageKeys.eletivas,
-    JSON.stringify(window.state.eletivas),
+    JSON.stringify(state.eletivas),
   );
   localStorage.setItem(
     CONFIG.storageKeys.matriculas,
-    JSON.stringify(window.state.matriculas),
+    JSON.stringify(state.matriculas),
   );
-  localStorage.setItem(CONFIG.storageKeys.registros, JSON.stringify([]));
+  localStorage.setItem(
+    CONFIG.storageKeys.registros,
+    JSON.stringify(state.registros),
+  );
   localStorage.setItem(
     CONFIG.storageKeys.semestres,
-    JSON.stringify(window.state.semestres),
+    JSON.stringify(state.semestres),
   );
 
   if (typeof window.salvarEstado === "function") {
     window.salvarEstado();
   }
 
-  console.log("✅ Dados padrão carregados");
+  console.log("✅ Dados de fallback carregados");
 }
 
-// Recarregar dados
 window.recarregarDados = async function () {
   await carregarDadosDaPlanilha();
   if (typeof window.carregarTodosDados === "function") {
@@ -348,6 +302,5 @@ window.recarregarDados = async function () {
   }
 };
 
-// Exportar funções
 window.carregarDadosDaPlanilha = carregarDadosDaPlanilha;
-window.recarregarDados = recarregarDados;
+window.carregarDadosFallback = carregarDadosFallback;

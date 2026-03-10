@@ -1,6 +1,4 @@
-// js/frequencias.js
-// Módulo de visualização de frequências para professores e gestores
-
+// js/frequencias.js - Módulo de visualização de frequências
 (function () {
   console.log("📊 Inicializando módulo de frequências...");
 

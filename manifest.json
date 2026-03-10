@@ -1,6 +1,6 @@
 {
   "name": "SAGE 2026 - Diário de Eletivas",
-  "short_name": "SAGE",
+  "short_name": "SAGE-Diário",
   "description": "Sistema de Gestão de Eletivas da EEMTI Filgueiras Lima",
   "start_url": "/index.html",
   "display": "standalone",
